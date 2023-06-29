@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { DateTime } from 'luxon';
 
 const App = () => {
 
@@ -12,6 +13,7 @@ const App = () => {
         developer: ""
     });
 
+    // Get DB data from API
     const fetchGames = () => {
         fetch("api/Game")
             .then(response => { return response.json() })
@@ -28,7 +30,7 @@ const App = () => {
         fetchGames();
     }, [])
 
-
+    //checks if the form is for updating or adding
     const handleFormSubmit = (e) => {
         e.preventDefault();
         if (!updateGame) {
@@ -88,11 +90,20 @@ const App = () => {
              });
     };
 
+    // So you can go bewteen Add and Update
     const resetForm = () => {
         handleCancelButton();
         setShowForm(true)
     }
 
+    //const fixDate = (dt) => {
+    //    if (dt) {
+    //        return DateTime.fromISO(dt, { zone: 'utd' }).toLocaleString(DateTime.DATE_SHORT);
+    //    }
+    //    else {
+    //        return '';
+    //    }
+    //}
 
 
     return (
