@@ -1,0 +1,7 @@
+CREATE PROCEDURE [dbo].[DeleteGame]
+	@Id INT
+AS
+BEGIN
+	DELETE FROM GamesTable
+	WHERE Id = @Id
+END
