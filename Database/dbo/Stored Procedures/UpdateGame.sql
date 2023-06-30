@@ -1,7 +1,7 @@
 CREATE PROCEDURE [dbo].[UpdateGame]
 	@Id INT,
 	@Name VARCHAR(50),
-	@ReleaseDate datetime2(7) = NULL,
+	@ReleaseDate DATE = NULL,
 	@Developer VARCHAR(50)
 AS
 BEGIN

@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { DateTime } from 'luxon';
+import * as yup from 'yup';
 
 const App = () => {
 
     const [games, setGames] = useState([])
     const [showForm, setShowForm] = useState(false)
     const [updateGame, setUpdateGame] = useState(false)
+    const [showFormError, setShowFormError] = useState(false)
+    const [formErrorText, setFormErrorText] = useState("Darn!")
     const [formData, setFormData] = useState({
         id: "",
         name: "",
@@ -30,29 +33,54 @@ const App = () => {
         fetchGames();
     }, [])
 
+    const validationSchema = yup
+        .object()
+        .shape({
+            name: yup.string().required("Name is required!").max(50),
+            releaseDate: yup.string().matches(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format(yyyy - mm - dd)'),
+            developer: yup.string().required("Developer is required!").max(50)
+        })
+        .required();
+
     //checks if the form is for updating or adding
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        if (!updateGame) {
-            fetch('api/Game', {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(formData)
+
+        validationSchema.validate(formData, { abortEarly: false })
+            .then(() => {
+
+                if (!updateGame) {
+                    fetch('api/Game', {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    fetchGames();
+                }
+                else {
+                    fetch(`api/Game/${formData.id}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    fetchGames();
+                }
+                handleCancelButton();
             })
-            fetchGames();
-        }
-        else {
-            fetch(`api/Game/${formData.id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(formData)
-            })
-            fetchGames();
-        }
+            .catch((errors) => {
+                const validationErrors = {};
+                errors.inner.forEach((error) => {
+                    const { path, message } = error;
+                    validationErrors[path] = message;
+                });
+                console.log(errors);
+                setFormErrorText(Object.values(validationErrors).join('\n'));
+                setShowFormError(true);
+            });
     }
 
     const handleCancelButton = () => {
@@ -63,6 +91,7 @@ const App = () => {
             developer: ""
         });
         setShowForm(false);
+        setShowFormError(false);
         setUpdateGame(false);
     }
 
@@ -96,14 +125,16 @@ const App = () => {
         setShowForm(true)
     }
 
-    //const fixDate = (dt) => {
-    //    if (dt) {
-    //        return DateTime.fromISO(dt, { zone: 'utd' }).toLocaleString(DateTime.DATE_SHORT);
-    //    }
-    //    else {
-    //        return '';
-    //    }
-    //}
+    const fixDate = (dt) => {
+        if (dt) {
+            let newDate = DateTime.fromISO(dt, { zone: 'utc' }).toLocaleString(DateTime.DATE_SHORT);
+            console.log(newDate);
+            return newDate;
+        }
+        else {
+            return '';
+        }
+    }
 
 
     return (
@@ -126,7 +157,7 @@ const App = () => {
                                     <tr>
                                         <td>{game.id}</td>
                                         <td>{game.name}</td>
-                                        <td>{game.releaseDate}</td>
+                                        <td>{fixDate(game.releaseDate)}</td>
                                         <td>{game.developer}</td>
                                         <td>
                                             <button onClick={() => handleGameUpdate(game)}>Update</button>
@@ -150,13 +181,16 @@ const App = () => {
                                     <input type="text" placeholder="Enter Game Name..." id="formName" className="form-control" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                                 </div>
                                 <div>
-                                    <label>Release Date</label>
+                                    <label>Release Date  (yyyy-mm-dd)</label>
                                     <input type="text" placeholder="Enter Release Date..." id="formReleaseDate" className="form-control" value={formData.releaseDate} onChange={(e) => setFormData({ ...formData, releaseDate: e.target.value })} />
                                 </div>
                                 <div>
                                     <label>Developer</label>
                                     <input type="text" placeholder="Enter Developer..." id="formDev" className="form-control" value={formData.developer} onChange={(e) => setFormData({...formData, developer: e.target.value})} required />
                                 </div>
+                                {showFormError &&
+                                    <pre style={{ color: 'red' }}>{formErrorText}</pre>    
+                                }
                                 <button type="submit">Submit</button>
                             </form>
                             <button onClick={() => handleCancelButton()}> Cancel</button>
