@@ -154,7 +154,7 @@ const App = () => {
                         <tbody>
                             {
                                 games.map((game) => (
-                                    <tr>
+                                    <tr key={game.id}>
                                         <td>{game.id}</td>
                                         <td>{game.name}</td>
                                         <td>{fixDate(game.releaseDate)}</td>
